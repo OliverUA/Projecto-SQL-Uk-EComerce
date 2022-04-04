@@ -22,7 +22,9 @@ FROM Sales;
 
 # 15 Cleintes que mAS gAStan en la compañia.
 
-SELECT CustomerNo, ROUND(SUM(TotalSpend), 2) AS Spend
+SELECT 
+  CustomerNo, 
+  ROUND(SUM(TotalSpend), 2) AS Spend
 FROM SalesTemp
 GROUP BY CustomerNo
 ORDER BY Spend DESC
@@ -30,7 +32,9 @@ LIMIT 15;
 
 # Countries with most sales besides UNited Kingdom
 
-SELECT Country, ROUND(SUM(TotalSpend), 2) AS CountrySpend
+SELECT 
+  Country, 
+  ROUND(SUM(TotalSpend), 2) AS CountrySpend
 FROM SalesTemp
 WHERE Country <> 'United Kingdom'
 GROUP BY Country
@@ -39,10 +43,10 @@ ORDER BY CountrySpend DESC;
 # Prodcuto mAS comprado
 
 SELECT *
-FROM (
-SELECT ProductName, SUM(Quantity) OVER (PARTITION BY ProductName) AS cantidadvendida
-FROM SalesTemp
-) AS ASfg 
+FROM (SELECT 
+        ProductName, 
+        SUM(Quantity) OVER (PARTITION BY ProductName) AS cantidadvendida
+      FROM SalesTemp) AS ASfg 
 GROUP BY ProductName, cantidadvendida
 ORDER BY cantidadvendida DESC
 ;
@@ -50,14 +54,17 @@ ORDER BY cantidadvendida DESC
 
 # Producto que genero mAS ingreso
 
-SELECT ProductName, ROUND(SUM(TotalSpend), 2) AS ProdcutSale
+SELECT ProductName, 
+       ROUND(SUM(TotalSpend), 2) AS ProdcutSale
 FROM SalesTemp
 GROUP BY ProductName
 ORDER BY ProdcutSale DESC;
 
 # Clientes con sus respectivos paises y gAStos.
 
-SELECT CustomerNo, Country, ROUND(SUM(TotalSpend),2) AS Spend
+SELECT CustomerNo, 
+       Country, 
+       ROUND(SUM(TotalSpend),2) AS Spend
 FROM SalesTemp
 GROUP BY CustomerNo, Country
 ORDER BY Spend DESC
@@ -66,14 +73,16 @@ ORDER BY Spend DESC
 # Total Acumulativo de usuarios activos por mes 
 
 
-SELECT Fecha, UsuariosActivos,
-SUM(UsuariosActivos) OVER (ORDER BY Fecha ASC) AS UsuariosActivosRT
+SELECT 
+  Fecha, 
+  UsuariosActivos,
+  SUM(UsuariosActivos) OVER (ORDER BY Fecha ASC) AS UsuariosActivosRT
 FROM (SELECT 
-       DATE_FORMAT(firstbuy,'%Y-%m') AS Fecha,
-       COUNT(DISTINCT CustomerNo) AS UsuariosActivos
+        DATE_FORMAT(firstbuy,'%Y-%m') AS Fecha,
+        COUNT(DISTINCT CustomerNo) AS UsuariosActivos
       FROM (SELECT 
-             CustomerNo, 
-             MIN(Date) AS firstbuy
+              CustomerNo, 
+              MIN(Date) AS firstbuy
             FROM SalesTemp
             GROUP BY CustomerNo) AS dg
       GROUP BY Fecha
@@ -83,41 +92,47 @@ ORDER BY Fecha ASC
 
 # Crecimiento Acumulativo de usuarios activos por mes (CAMBIAR USUARIOS POR COMPRADORES)
 
-SELECT Fecha, UsuariosActivos,
-ROUND((UsuariosActivos - UsuariosActivosRT) / UsuariosActivosRT, 2) AS growth
-FROM (SELECT Fecha, UsuariosActivos,
-COALESCE (LAG(UsuariosActivos) OVER (ORDER BY Fecha ASC), 1) AS UsuariosActivosRT
-FROM (SELECT  
-       DATE_FORMAT(firstbuy,'%Y-%m') AS Fecha,
-       COUNT(DISTINCT CustomerNo) AS UsuariosActivos
-      FROM (SELECT 
-             CustomerNo, 
-             MIN(Date) AS firstbuy
-            FROM SalesTemp
-            GROUP BY CustomerNo) AS dg
-      GROUP BY Fecha
-      ORDER BY Fecha) AS dgs
-ORDER BY Fecha ASC) AS dgba
+SELECT 
+  Fecha, 
+  UsuariosActivos,
+  ROUND((UsuariosActivos - UsuariosActivosRT) / UsuariosActivosRT, 2) AS growth
+FROM (SELECT 
+        Fecha, 
+        UsuariosActivos,
+        COALESCE (LAG(UsuariosActivos) OVER (ORDER BY Fecha ASC), 1) AS UsuariosActivosRT
+      FROM (SELECT  
+              DATE_FORMAT(firstbuy,'%Y-%m') AS Fecha,
+              COUNT(DISTINCT CustomerNo) AS UsuariosActivos
+            FROM (SELECT 
+                    CustomerNo, 
+                    MIN(Date) AS firstbuy
+                  FROM SalesTemp
+                  GROUP BY CustomerNo) AS dg
+           GROUP BY Fecha
+           ORDER BY Fecha) AS dgs
+     ORDER BY Fecha ASC) AS dgba
 ;
 
 # VentAS por comprador. IPPC = Ingreso Promedio por Comprador.
 
 SELECT ROUND(AVG(Ingreso)) AS IPPC
-FROM (
-SELECT CustomerNo, SUM(Price*Quantity) AS Ingreso
+FROM (SELECT 
+        CustomerNo,   
+        SUM(Price*Quantity) AS Ingreso
 FROM SalesTemp
-GROUP BY CustomerNo
-) AS lgh
+GROUP BY CustomerNo) AS lgh
 ;
 
 # Frecuencia de ordenes
 
-SELECT ordenes,
-COUNT(DISTINCT CustomerNo) AS compradores
-FROM (SELECT CustomerNo, 
-COUNT(DISTINCT TransactionNo) AS ordenes
-FROM SalesTemp
-GROUP BY CustomerNo) AS fad
+SELECT 
+  ordenes,
+  COUNT(DISTINCT CustomerNo) AS compradores
+FROM (SELECT 
+        CustomerNo, 
+        COUNT(DISTINCT TransactionNo) AS ordenes
+      FROM SalesTemp
+      GROUP BY CustomerNo) AS fad
 GROUP BY ordenes
 ORDER BY ordenes ASC;
 
@@ -126,32 +141,22 @@ ORDER BY ordenes ASC;
 
 
 SELECT 
-CASE
-when Ingreso < '300'
-
-then 'Comprador Chico'
-
-when Ingreso > '300' and Ingreso < '2500'
-
-then 'estandar'
-
-when Ingreso > '2500' and Ingreso < '10000'
-
-then 'Comprador Alto'
-
-Else 'Comprador Premium'
-
-end AS loco,
-
-COUNT(DISTINCT CustomerNo) AS cantidad
-
-
-FROM (SELECT CustomerNo, ROUND(SUM(TotalSpend), 2) AS Ingreso
+  CASE
+    WHEN Ingreso < '300'
+    THEN 'Comprador Chico'
+    WHEN Ingreso > '300' and Ingreso < '2500'
+    THEN 'estandar'
+    WHEN Ingreso > '2500' and Ingreso < '10000'
+    THEN 'Comprador Alto'
+    ELSE 'Comprador Premium'
+    END AS Tipo,
+    COUNT(DISTINCT CustomerNo) AS cantidad
+FROM (SELECT 
+        CustomerNo, 
+        ROUND(SUM(TotalSpend), 2) AS Ingreso
      FROM SalesTemp
      GROUP BY CustomerNo) AS fga
-
-GROUP BY loco
-
+GROUP BY Tipo
 ORDER BY cantidad DESC
 
 # Note that in PostreSQL and other RDBMS it can be done with: "SELECT PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY by value)"
@@ -161,26 +166,23 @@ ORDER BY cantidad DESC
 
 SELECT Country
 FROM Sales
-WHERE CustomerNo in (
+WHERE CustomerNo in (SELECT 
+                       CustomerNo
+                       FROM (SELECT 
+                               CustomerNo, 
+                               ROUND(SUM(TotalSpend), 2) AS Ingreso,
+                               ROUND( PERCENT_RANK() OVER (ORDER BY ROUND(SUM(TotalSpend), 2)) ,2) Percentil
+                             FROM SalesTemp2
+                             GROUP BY CustomerNo) AS fakls
+                       WHERE Ingreso > (SELECT 
+                                          max(Ingreso)
+                                          FROM (SELECT 
+                                                  CustomerNo, 
+                                                  ROUND(SUM(TotalSpend), 2) AS Ingreso,
+                                                  ROUND( PERCENT_RANK() OVER (ORDER BY ROUND(SUM(TotalSpend), 2)) ,2) Percentil
+                                                FROM SalesTemp
+                                                GROUP BY CustomerNo) AS fakl
+                                          WHERE percentil = '0.95'))
 
-SELECT CustomerNo
-FROM (
-SELECT CustomerNo, ROUND(SUM(TotalSpend), 2) AS Ingreso,
-     ROUND( PERCENT_RANK() OVER (ORDER BY ROUND(SUM(TotalSpend), 2)) ,2) Percentil
-     FROM SalesTemp2
-     GROUP BY CustomerNo
-) AS fakls
-WHERE Ingreso > (
-SELECT max(Ingreso)
-FROM (
-SELECT CustomerNo, ROUND(SUM(TotalSpend), 2) AS Ingreso,
-     ROUND( PERCENT_RANK() OVER (ORDER BY ROUND(SUM(TotalSpend), 2)) ,2) Percentil
-     FROM SalesTemp
-     GROUP BY CustomerNo
-) AS fakl
-WHERE percentil = '0.95'
-)
-)
+GROUP BY Country;
 
-GROUP BY Country
-;
