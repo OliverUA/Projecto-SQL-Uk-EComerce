@@ -224,3 +224,5 @@ WHERE CustomerNo in (SELECT
 GROUP BY Country
 
 ;
+
+Visualización en Tableau. Link: https://public.tableau.com/app/profile/oliver.tomas/viz/InteractiveE-CommerceDashboard/Dashboard2
